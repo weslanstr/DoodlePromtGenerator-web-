@@ -1,0 +1,28 @@
+﻿@page
+@model DoodlePromptGenerator.Pages.IndexModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Art Prompt Generator</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <div class="app-shell">
+        @if (!string.IsNullOrWhiteSpace(Model.Output))
+        {
+            <pre class="prompt-output">@Model.Output</pre>
+        }
+        <form method="post">
+            <button type="submit" asp-page-handler="Generate" class="generate-button">
+                Generate
+            </button>
+        </form>
+    </div>
+</body>
+</html>
