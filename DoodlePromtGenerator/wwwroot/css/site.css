@@ -25,19 +25,29 @@ body {
     color: white;
 }
 
-.generate-button {
-    background: white;
-    color: black;
-    border: none;
-    padding: 16px 32px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    border-radius: 999px;
+.intro-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    max-width: 700px;
 }
 
-    .generate-button:hover {
-        opacity: 0.9;
-    }
+.logo-image {
+    max-width: 220px;
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.intro-text {
+    color: white;
+    font-size: 1rem;
+    line-height: 1.6;
+    text-align: center;
+    margin: 0;
+    max-width: 600px;
+}
 
 .prompt-output {
     color: white;
@@ -47,4 +57,112 @@ body {
     line-height: 1.1;
     white-space: pre-wrap;
     margin: 0;
+}
+
+.generate-button {
+    background: white;
+    color: black;
+    border: none;
+    padding: 16px 32px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    border-radius: 999px;
+    transition: transform 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+}
+
+    .generate-button:hover {
+        opacity: 0.95;
+        transform: translateY(-1px);
+    }
+
+    .generate-button:active {
+        transform: scale(0.5);
+    }
+
+.prompt-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 220px;
+}
+
+.prompt-source {
+    display: none;
+}
+
+.prompt-output {
+    color: #d8ffd8;
+    background: black;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.1;
+    white-space: pre-wrap;
+    margin: 0;
+    text-shadow: 0 0 4px rgba(180, 255, 180, 0.25), 0 0 10px rgba(120, 255, 120, 0.15);
+}
+
+    .prompt-output::after {
+        content: "_";
+        display: inline-block;
+        margin-left: 2px;
+        animation: blinkCursor 0.8s steps(1) infinite;
+    }
+
+    .prompt-output.finished::after {
+        animation: blinkCursor 0.8s steps(1) infinite;
+    }
+
+@keyframes blinkCursor {
+    0%, 49% {
+        opacity: 1;
+    }
+
+    50%, 100% {
+        opacity: 0;
+    }
+}
+
+.prompt-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 220px;
+}
+
+.prompt-source {
+    display: none;
+}
+
+.prompt-output {
+    color: white;
+    background: black;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.1;
+    margin: 0;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.prompt-line {
+    white-space: pre;
+}
+
+.prompt-output::after {
+    content: "_";
+    display: inline-block;
+    margin-top: 6px;
+    animation: blinkCursor 0.8s steps(1) infinite;
+}
+
+@keyframes blinkCursor {
+    0%, 49% {
+        opacity: 1;
+    }
+
+    50%, 100% {
+        opacity: 0;
+    }
 }

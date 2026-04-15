@@ -14,15 +14,106 @@
 </head>
 <body>
     <div class="app-shell">
-        @if (!string.IsNullOrWhiteSpace(Model.Output))
+        @if (string.IsNullOrWhiteSpace(Model.Output))
         {
-            <pre class="prompt-output">@Model.Output</pre>
+            <div class="intro-block">
+                <img src="~/images/logo.png" alt="Art Prompt Generator Logo" class="logo-image" />
+                <p class="intro-text">
+                    Procedural and local art prompt generator.<br />
+                    Make more art. Use less Ai.
+                </p>
+            </div>
         }
-        <form method="post">
-            <button type="submit" asp-page-handler="Generate" class="generate-button">
+        else
+        {
+            <div class="prompt-wrapper">
+                <pre id="promptSource" class="prompt-source">@Model.Output</pre>
+                <div id="promptOutput" class="prompt-output"></div>
+            </div>
+        }
+
+        <form method="post" id="generateForm">
+            <button type="submit" asp-page-handler="Generate" class="generate-button" id="generateButton">
                 Generate
             </button>
         </form>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("generateForm");
+            const button = document.getElementById("generateButton");
+
+            if (form && button) {
+                form.addEventListener("submit", function () {
+                    button.textContent = "Generating...";
+                    button.disabled = true;
+                });
+            }
+
+            const promptSource = document.getElementById("promptSource");
+            const promptOutput = document.getElementById("promptOutput");
+
+            if (promptSource && promptOutput) {
+                const finalText = promptSource.textContent || "";
+                animateLines(finalText, promptOutput);
+            }
+        });
+
+        function animateLines(text, container) {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@@#$%^&*()_+-=[]{};:<>?/\\|";
+            const lines = text.split(/\r?\n/);
+
+            container.innerHTML = "";
+
+            const lineElements = lines.map(line => {
+                const div = document.createElement("div");
+                div.className = "prompt-line";
+                div.textContent = "";
+                container.appendChild(div);
+
+                return {
+                    finalText: line,
+                    element: div,
+                    progress: 0
+                };
+            });
+
+            const interval = setInterval(() => {
+                let completed = 0;
+
+                for (const line of lineElements) {
+                    if (line.progress >= line.finalText.length) {
+                        line.element.textContent = line.finalText;
+                        completed++;
+                        continue;
+                    }
+
+                    line.progress += Math.max(1, Math.floor(Math.random() * 3));
+
+                    let output = "";
+
+                    for (let i = 0; i < line.finalText.length; i++) {
+                        if (i < line.progress) {
+                            output += line.finalText[i];
+                        } else if (line.finalText[i] === " ") {
+                            output += " ";
+                        } else {
+                            output += chars[Math.floor(Math.random() * chars.length)];
+                        }
+                    }
+
+                    line.element.textContent = output;
+                }
+
+                if (completed === lineElements.length) {
+                    clearInterval(interval);
+                    container.classList.add("finished");
+                }
+            }, 35);
+        }
+    </script>
+
 </body>
 </html>
+
