@@ -36,7 +36,7 @@ public static class AsciiPatternGenerator
     /// </param>
     public static string GenerateRandom(
         string? patternName = null,
-        int lines = 45,
+        int lines = 50,
         int width = 120,
         int? seed = null)
     {
@@ -49,7 +49,7 @@ public static class AsciiPatternGenerator
             return Render(Resolve(patternName), lines, width);
 
         // 50 / 50 coin flip.
-        if (rng.Next(8) == 0)
+        if (rng.Next(2) == 0)
         {
             // ── Defined-pattern branch (50 % of all calls) ───────────────────
             // Each of the 7 named patterns has equal probability (1/7) within
@@ -67,7 +67,8 @@ public static class AsciiPatternGenerator
 
     /// <summary>Returns the names of all built-in defined patterns.</summary>
     public static string[] AvailablePatterns() =>
-        new[] { "wave", "diamond", "spiral", "maze", "checkerboard", "zigzag", "ripple" };
+        new[] { "wave", "diamond", "spiral", "maze", "checkerboard", "zigzag", "ripple",
+                "crosshatch", "pulse", "weave", "sierpinski", "dune", "helix", "static", "vortex" };
 
     // ── Routing helpers ────────────────────────────────────────────────────────
 
@@ -87,6 +88,14 @@ public static class AsciiPatternGenerator
         "checkerboard" => CheckerboardPattern(),
         "zigzag" => ZigzagPattern(),
         "ripple" => RipplePattern(),
+        "crosshatch" => CrosshatchPattern(),
+        "pulse" => PulsePattern(),
+        "weave" => WeavePattern(),
+        "sierpinski" => SierpinskiPattern(),
+        "dune" => DunePattern(),
+        "helix" => HelixPattern(),
+        "static" => StaticPattern(),
+        "vortex" => VortexPattern(),
         _ => WavePattern()
     };
 
@@ -306,6 +315,161 @@ public static class AsciiPatternGenerator
             int ly = row % tileH - tileH / 2;
             double dist = Math.Sqrt(lx * lx * 0.5 + ly * ly);   // scaled to keep rings round
             int idx = (int)(dist / spacing) % ring.Length;
+            return ring[idx];
+        });
+    }
+
+    // ── New Pattern Definitions ────────────────────────────────────────────────
+
+    /// Overlapping diagonal lines at 45° forming an X-grid crosshatch.
+    private static PatternDef CrosshatchPattern()
+    {
+        char[] shade = { ' ', '.', '+', '#', '@' };
+        return new PatternDef("crosshatch", (col, row, w, h) =>
+        {
+            const int spacing = 6;
+            int diag1 = (col + row) % spacing;   // top-left → bottom-right
+            int diag2 = (col - row + w * 2) % spacing;   // top-right → bottom-left
+            int density = 0;
+            if (diag1 == 0) density += 2;
+            if (diag2 == 0) density += 2;
+            if (diag1 == 1 || diag2 == 1) density += 1;
+            return shade[Math.Min(density, shade.Length - 1)];
+        });
+    }
+
+    /// Concentric rectangles expanding from the canvas centre — radar / pulse effect.
+    private static PatternDef PulsePattern()
+    {
+        char[] ring = { '@', '#', '=', '-', '.', ' ', '.', '-', '=', '#' };
+        return new PatternDef("pulse", (col, row, w, h) =>
+        {
+            // Chebyshev distance from canvas centre (makes rectangular rings)
+            int dx = Math.Abs(col - w / 2);
+            int dy = Math.Abs(row - h / 2) * 2;   // ×2 compensates for monospace aspect ratio
+            int dist = Math.Max(dx, dy);
+            return ring[dist % ring.Length];
+        });
+    }
+
+    /// Basket-weave: interlocking horizontal and vertical strands.
+    private static PatternDef WeavePattern()
+    {
+        return new PatternDef("weave", (col, row, w, h) =>
+        {
+            const int strand = 3;   // thickness of each strand
+            int block = strand * 2;
+            int phase = (col / block + row / block) % 2;   // alternates which strand is "over"
+            int lc = col % block;
+            int lr = row % block;
+
+            if (phase == 0)
+            {
+                // Horizontal strand on top in even blocks
+                if (lr < strand) return lr == 0 || lr == strand - 1 ? '|' : '-';
+                if (lc < strand) return lc == 0 || lc == strand - 1 ? '-' : '|';
+                return '+';
+            }
+            else
+            {
+                // Vertical strand on top in odd blocks
+                if (lc < strand) return lc == 0 || lc == strand - 1 ? '-' : '|';
+                if (lr < strand) return lr == 0 || lr == strand - 1 ? '|' : '-';
+                return '+';
+            }
+        });
+    }
+
+    /// Sierpiński triangle fractal — uses the bitwise AND trick: (col & row) != 0.
+    private static PatternDef SierpinskiPattern()
+    {
+        char[] on = { '#', '@', '*' };
+        char[] off = { ' ', '.', ':' };
+        return new PatternDef("sierpinski", (col, row, w, h) =>
+        {
+            // Tile the fractal by wrapping coordinates into a power-of-two cell
+            const int cell = 32;
+            int tc = col % cell;
+            int tr = row % (cell / 2);
+            // Classic Sierpiński condition
+            bool filled = (tc & tr) == 0;
+            int tier = ((col / cell) + (row / (cell / 2))) % on.Length;
+            return filled ? on[tier] : off[tier];
+        });
+    }
+
+    /// Diagonal wood-grain / sand-dune bands that drift slowly across the canvas.
+    private static PatternDef DunePattern()
+    {
+        char[] shade = { ' ', '`', '.', '-', '~', '=', '#' };
+        return new PatternDef("dune", (col, row, w, h) =>
+        {
+            // Two diagonal waves at slightly different angles, superimposed
+            double v1 = Math.Sin((col * 0.08) + (row * 0.18));
+            double v2 = Math.Sin((col * 0.13) - (row * 0.07) + 1.5) * 0.5;
+            double v = (v1 + v2 + 1.5) / 3.0;   // normalise 0-1
+            int idx = (int)(v * (shade.Length - 1));
+            return shade[Math.Clamp(idx, 0, shade.Length - 1)];
+        });
+    }
+
+    /// Double-helix: two sine ribbons offset by π, flowing down the canvas.
+    private static PatternDef HelixPattern()
+    {
+        return new PatternDef("helix", (col, row, w, h) =>
+        {
+            const double freq = 0.25;   // vertical frequency of the helix turn
+            double angle = row * freq * Math.PI;
+            // The two strands sit at ±amplitude, projected onto the column axis
+            double amp = w * 0.35;
+            double cx = w / 2.0;
+            double strand1 = cx + amp * Math.Sin(angle);
+            double strand2 = cx + amp * Math.Sin(angle + Math.PI);   // opposite phase
+
+            double d1 = Math.Abs(col - strand1);
+            double d2 = Math.Abs(col - strand2);
+            double closest = Math.Min(d1, d2);
+
+            if (closest < 1.0) return '@';
+            else if (closest < 2.0) return '#';
+            else if (closest < 3.5) return '*';
+            else if (closest < 5.0) return '.';
+            else return ' ';
+        });
+    }
+
+    /// Structured static: hash-driven noise with visible grain texture.
+    private static PatternDef StaticPattern()
+    {
+        char[] chars = { ' ', ' ', ' ', '.', '.', ':', '+', '*', '#', '@' };
+        return new PatternDef("static", (col, row, w, h) =>
+        {
+            // Mix multiple hash frequencies to create layered grain
+            int h1 = Hash(col, row) % chars.Length;
+            int h2 = Hash(col / 2, row / 2) % chars.Length;
+            int h3 = Hash(col / 4, row / 4) % chars.Length;
+            int idx = (h1 * 3 + h2 * 2 + h3) / 6;   // weighted blend
+            return chars[Math.Clamp(idx, 0, chars.Length - 1)];
+        });
+    }
+
+    /// Vortex: polar swirl calculated from angle and distance to canvas centre.
+    private static PatternDef VortexPattern()
+    {
+        char[] ring = { ' ', '.', ':', '-', '+', '*', '#', '@' };
+        return new PatternDef("vortex", (col, row, w, h) =>
+        {
+            double cx = w / 2.0;
+            double cy = h / 2.0;
+            double dx = (col - cx) / (w * 0.5);   // normalised -1..1
+            double dy = (row - cy) / (h * 0.5) * 2.5;   // aspect-ratio corrected
+            double dist = Math.Sqrt(dx * dx + dy * dy);
+            double angle = Math.Atan2(dy, dx);        // -π..π
+            // Swirl: add a rotation proportional to distance from centre
+            double swirl = angle + dist * 3.5;
+            // Map swirl + distance to a palette index
+            double v = (Math.Sin(swirl * 2.0) * 0.5 + dist * 0.5);
+            int idx = (int)(Math.Abs(v) * (ring.Length - 1)) % ring.Length;
             return ring[idx];
         });
     }

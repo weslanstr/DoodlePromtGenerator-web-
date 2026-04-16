@@ -373,7 +373,7 @@ namespace DoodlePromptGenerator
 
         public string GeneratePrompt()
         {
-            int sentenceType = random.Next(6);
+            int sentenceType = random.Next(8);
 
             switch (sentenceType)
             {
