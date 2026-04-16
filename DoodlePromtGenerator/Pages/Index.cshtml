@@ -19,8 +19,8 @@
             <div class="intro-block">
                 <img src="~/images/logo.png" alt="Art Prompt Generator Logo" class="logo-image" />
                 <p class="intro-text">
-                    Procedural and local art prompt generator.<br />
-                    Make more art. Use less Ai.
+                    Procedural art prompt generator.<br />
+                    Make more art!
                 </p>
             </div>
         }
@@ -50,6 +50,17 @@
                     button.disabled = true;
                 });
             }
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+
+                    if (form && button && !button.disabled) {
+                        button.textContent = "Generating...";
+                        button.disabled = true;
+                        form.submit();
+                    }
+                }
+            });
 
             const promptSource = document.getElementById("promptSource");
             const promptOutput = document.getElementById("promptOutput");

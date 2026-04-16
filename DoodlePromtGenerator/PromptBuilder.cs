@@ -28,11 +28,11 @@ namespace DoodlePromptGenerator
             things = new()
             {
                 { "gun", "🔫" },
-                { "revolver", "" },
-                { "rifle", "" },
-                { "AK-47", "" },
-                { "shotgun", "" },
-                { "sniper rifle", "" },
+                { "revolver", "🔫" },
+                { "rifle", "🔫" },
+                { "AK-47", "🔫" },
+                { "shotgun", "🔫" },
+                { "sniper rifle", "🔫" },
                 { "energy sword", "⚔️" },
                 { "katana", "🗡️" },
                 { "longsword", "⚔️" },
@@ -51,7 +51,7 @@ namespace DoodlePromptGenerator
                 { "scroll", "📜" },
                 { "skull", "💀" },
                 { "radio", "📻" },
-                { "walkie-talkie", "" },
+                { "walkie-talkie", "📻" },
                 { "helmet", "⛑️" },
                 { "pilot helmet", "🪖" },
                 { "gas mask", "" },
@@ -388,7 +388,7 @@ namespace DoodlePromptGenerator
                         string sentence = $"A {subject} {action.text} while holding a {heldItem.text}.";
                         string emojis = BuildEmojiLine(character.emoji, action.emoji, heldItem.emoji);
 
-                        return $"{sentence}{emojis}";
+                        return $"{emojis}{Environment.NewLine}{sentence}";
                     }
 
                 case 1:
@@ -400,7 +400,7 @@ namespace DoodlePromptGenerator
                         string sentence = $"A {vibe.text} {character.text} with a {thing.text}.";
                         string emojis = BuildEmojiLine(vibe.emoji, character.emoji, thing.emoji);
 
-                        return $"{sentence}{emojis}";
+                        return $"{emojis}{Environment.NewLine}{sentence}";
                     }
 
                 case 2:
@@ -412,7 +412,7 @@ namespace DoodlePromptGenerator
                         string sentence = $"A {character1.text} and a {character2.text} {action.text} together.";
                         string emojis = BuildEmojiLine(character1.emoji, character2.emoji, action.emoji);
 
-                        return $"{sentence}{emojis}";
+                        return $"{emojis}{Environment.NewLine}{sentence}";
                     }
 
                 case 3:
@@ -426,7 +426,7 @@ namespace DoodlePromptGenerator
                         string sentence = $"A {subject} {action.text} near a {thing.text}.";
                         string emojis = BuildEmojiLine(character.emoji, action.emoji, thing.emoji);
 
-                        return $"{sentence}{emojis}";
+                        return $"{emojis}{Environment.NewLine}{sentence}";
                     }
 
                 case 4:
@@ -439,7 +439,7 @@ namespace DoodlePromptGenerator
                         string sentence = $"A {vibe.text} scene of a {character.text} holding a {heldItem.text} beside a {thing.text}.";
                         string emojis = BuildEmojiLine(vibe.emoji, character.emoji, heldItem.emoji, thing.emoji);
 
-                        return $"{sentence}{emojis}";
+                        return $"{emojis}{Environment.NewLine}{sentence}";
                     }
 
                 case 5:
@@ -452,7 +452,7 @@ namespace DoodlePromptGenerator
                         string sentence = $"A {character1.text} and a {character2.text}, one {action.text} and one holding a {heldItem.text}.";
                         string emojis = BuildEmojiLine(character1.emoji, character2.emoji, action.emoji, heldItem.emoji);
 
-                        return $"{sentence}{emojis}";
+                        return $"{emojis}{Environment.NewLine}{sentence}";
                     }
 
                 case 6:
@@ -463,7 +463,7 @@ namespace DoodlePromptGenerator
                         string sentence = $"A {character1.text}, but with a baby {character2.text}.";
                         string emojis = BuildEmojiLine(character1.emoji, "👶", character2.emoji);
 
-                        return $"{sentence}{emojis}";
+                        return $"{emojis}{Environment.NewLine}{sentence}";
                     }
 
                 case 7:
@@ -476,7 +476,7 @@ namespace DoodlePromptGenerator
                         string sentence = $"A {character1.text} attempting to {action1.text} while a {character2.text} is {action2.text}.";
                         string emojis = BuildEmojiLine(character1.emoji, action1.emoji, character2.emoji, action2.emoji);
 
-                        return $"{sentence}{emojis}";
+                        return $"{emojis}{Environment.NewLine}{sentence}";
                     }
                 case 8:
                     {
@@ -487,7 +487,7 @@ namespace DoodlePromptGenerator
                         string sentence = $"A {character1.text} {action.text} for a {character2.text}.";
                         string emojis = $"{character1.emoji}{action.emoji}{character2.emoji}";
 
-                        return $"{sentence}{emojis}";
+                        return $"{emojis}{Environment.NewLine}{sentence}";
                     }
                 case 9:
                     {
@@ -498,7 +498,7 @@ namespace DoodlePromptGenerator
                         string sentence = $"A {vibe.text} {character.text} holding a {item.text}.";
                         string emojis = $"{vibe.emoji}{character.emoji}{item.emoji}";
 
-                        return $"{sentence}{emojis}";
+                        return $"{emojis}{Environment.NewLine}{sentence}";
                     }
 
                 default:

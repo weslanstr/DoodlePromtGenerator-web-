@@ -12,35 +12,114 @@ namespace DoodlePromptGenerator
             return CenterPromptInAscii(ascii, prompt);
         }
 
-        private static string CenterPromptInAscii(string ascii, string prompt)
+        static string OverwriteCenteredLine(string asciiLine, string text, int startCol)
+        {
+            char[] chars = asciiLine.ToCharArray();
+
+            for (int i = 0; i < text.Length && startCol + i < chars.Length; i++)
+            {
+                if (startCol + i >= 0)
+                {
+                    chars[startCol + i] = text[i];
+                }
+            }
+
+            return new string(chars);
+        }
+
+        static string ClearRegion(string line, int startCol, int endCol)
+        {
+            char[] chars = line.ToCharArray();
+
+            for (int i = startCol; i < endCol && i < chars.Length; i++)
+            {
+                if (i >= 0)
+                    chars[i] = ' ';
+            }
+
+            return new string(chars);
+        }
+
+        static string WriteText(string line, string text, int startCol)
+        {
+            char[] chars = line.ToCharArray();
+
+            for (int i = 0; i < text.Length && startCol + i < chars.Length; i++)
+            {
+                if (startCol + i >= 0)
+                    chars[startCol + i] = text[i];
+            }
+
+            return new string(chars);
+        }
+
+        static string CenterPromptInAscii(string ascii, string prompt)
         {
             const int TAB_WIDTH = 4;
 
-            string[] lines = ascii.Split(
+            string[] asciiLines = ascii.Split(
                 new[] { "\r\n", "\n" },
                 StringSplitOptions.RemoveEmptyEntries);
 
-            if (lines.Length == 0) return ascii;
+            if (asciiLines.Length == 0)
+                return ascii;
 
-            int lineWidth = lines[0].Length;
-            int boxInnerWidth = TAB_WIDTH + prompt.Length + TAB_WIDTH;
+            string[] promptLines = prompt.Split(
+                new[] { "\r\n", "\n" },
+                StringSplitOptions.None);
 
-            if (boxInnerWidth > lineWidth)
-                boxInnerWidth = lineWidth;
+            int canvasWidth = asciiLines[0].Length;
+            int canvasHeight = asciiLines.Length;
 
-            int boxStart = (lineWidth - boxInnerWidth) / 2;
-            int boxEnd = boxStart + boxInnerWidth;
+            // Longest text line determines box width
+            int longestPromptLine = promptLines.Max(line => line.Length);
 
-            int midLine = lines.Length / 2;
-            int blankAbove = Math.Max(0, midLine - 1);
-            int textLine = midLine;
-            int blankBelow = Math.Min(lines.Length - 1, midLine + 1);
+            // Box width = left padding + text + right padding
+            int boxWidth = TAB_WIDTH + longestPromptLine + TAB_WIDTH;
 
-            lines[blankAbove] = OverwriteRegion(lines[blankAbove], boxStart, boxEnd, "");
-            lines[blankBelow] = OverwriteRegion(lines[blankBelow], boxStart, boxEnd, "");
-            lines[textLine] = OverwriteRegion(lines[textLine], boxStart, boxEnd, prompt, TAB_WIDTH);
+            if (boxWidth > canvasWidth)
+                boxWidth = canvasWidth;
 
-            return string.Join(Environment.NewLine, lines);
+            // Box height = blank line above + prompt lines + blank line below
+            int boxHeight = 1 + promptLines.Length + 1;
+
+            if (boxHeight > canvasHeight)
+                boxHeight = canvasHeight;
+
+            int boxStartRow = (canvasHeight - boxHeight) / 2;
+            int boxEndRow = boxStartRow + boxHeight;
+
+            int boxStartCol = (canvasWidth - boxWidth) / 2;
+            int boxEndCol = boxStartCol + boxWidth;
+
+            // 1. Clear the full box region
+            for (int row = boxStartRow; row < boxEndRow; row++)
+            {
+                if (row >= 0 && row < asciiLines.Length)
+                {
+                    asciiLines[row] = ClearRegion(asciiLines[row], boxStartCol, boxEndCol);
+                }
+            }
+
+            // 2. Write each prompt line inside the box
+            // row 0 inside box is blank padding
+            // row 1 starts first text line
+            for (int i = 0; i < promptLines.Length; i++)
+            {
+                int row = boxStartRow + 1 + i;
+
+                if (row < 0 || row >= asciiLines.Length)
+                    continue;
+
+                string promptLine = promptLines[i];
+
+                // Center each prompt line inside the box
+                int textStartCol = boxStartCol + (boxWidth - promptLine.Length) / 2;
+
+                asciiLines[row] = WriteText(asciiLines[row], promptLine, textStartCol);
+            }
+
+            return string.Join(Environment.NewLine, asciiLines);
         }
 
         private static string OverwriteRegion(
