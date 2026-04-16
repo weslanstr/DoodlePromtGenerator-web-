@@ -33,8 +33,9 @@
         }
 
         <form method="post" id="generateForm">
+            <input type="hidden" id="PromptCount" name="PromptCount" value="@Model.PromptCount" />
             <button type="submit" asp-page-handler="Generate" class="generate-button" id="generateButton">
-                Generate
+                @Model.GetButtonText()
             </button>
         </form>
     </div>
@@ -57,7 +58,7 @@
                     if (form && button && !button.disabled) {
                         button.textContent = "Generating...";
                         button.disabled = true;
-                        form.submit();
+                        button.click();
                     }
                 }
             });
