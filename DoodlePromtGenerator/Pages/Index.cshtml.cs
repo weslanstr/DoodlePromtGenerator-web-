@@ -29,9 +29,9 @@ namespace DoodlePromptGenerator.Pages
         public string GetButtonText()
         {
             if (PromptCount == 0)
-                return "Give me an art prompt!";
+                return "Gimmi a art prompt!";
 
-            return $"Give me an {(PromptCount + 1).ToOrdinalWords()} art prompt!";
+            return $"Gimmi a {(PromptCount + 1).ToOrdinalWords()} art prompt!";
         }
 
         private string ToOrdinalWords(int number)

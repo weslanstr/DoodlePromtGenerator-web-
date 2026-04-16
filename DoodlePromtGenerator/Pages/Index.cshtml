@@ -19,8 +19,8 @@
             <div class="intro-block">
                 <img src="~/images/logo.png" alt="Art Prompt Generator Logo" class="logo-image" />
                 <p class="intro-text">
-                    Procedural art prompt generator.<br />
-                    Make more art!
+                    Art prompt generator.<br />
+                    Make more art.
                 </p>
             </div>
         }
@@ -56,9 +56,7 @@
                     event.preventDefault();
 
                     if (form && button && !button.disabled) {
-                        button.textContent = "Generating...";
-                        button.disabled = true;
-                        button.click();
+                        form.requestSubmit(button);
                     }
                 }
             });
