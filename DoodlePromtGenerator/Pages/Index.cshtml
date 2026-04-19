@@ -20,8 +20,8 @@
             <div class="intro-block">
                 <img src="~/images/logo.png" alt="Art Prompt Generator Logo" class="logo-image" />
                 <p class="intro-text">
-                    No ideas? No problem.<br />
-                    Generate and start drawing.
+                    No art ideas? No problem.<br />
+                    Just generate and draw.
                 </p>
             </div>
         }
@@ -42,88 +42,124 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const form = document.getElementById("generateForm");
-            const button = document.getElementById("generateButton");
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("generateForm");
+        const button = document.getElementById("generateButton");
 
-            if (form && button) {
+        if (form && button) {
                 form.addEventListener("submit", function () {
                     button.textContent = "One second...";
                     button.disabled = true;
                 });
             }
-            document.addEventListener("keydown", function (event) {
-                if (event.key === "Enter") {
-                    event.preventDefault();
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
 
-                    if (form && button && !button.disabled) {
-                        form.requestSubmit(button);
-                    }
+                if (form && button && !button.disabled) {
+                    form.requestSubmit(button);
                 }
-            });
-
-            const promptSource = document.getElementById("promptSource");
-            const promptOutput = document.getElementById("promptOutput");
-
-            if (promptSource && promptOutput) {
-                const finalText = promptSource.textContent || "";
-                animateLines(finalText, promptOutput);
             }
         });
 
-        function animateLines(text, container) {
-            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&()§¶©®™°±×÷∞≠≈≤≥√∆∑πµΩ€£¥¢₹₿₩₪₫АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯΔλΩΨΦΘΣ";
-            const lines = text.split(/\r?\n/);
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
 
-            container.innerHTML = "";
-
-            const lineElements = lines.map(line => {
-                const div = document.createElement("div");
-                div.className = "prompt-line";
-                div.textContent = "";
-                container.appendChild(div);
-
-                return {
-                    finalText: line,
-                    element: div,
-                    progress: 0
-                };
-            });
-
-            const interval = setInterval(() => {
-                let completed = 0;
-
-                for (const line of lineElements) {
-                    if (line.progress >= line.finalText.length) {
-                        line.element.textContent = line.finalText;
-                        completed++;
-                        continue;
-                    }
-
-                    line.progress += Math.max(1, Math.floor(Math.random() * 3));
-
-                    let output = "";
-
-                    for (let i = 0; i < line.finalText.length; i++) {
-                        if (i < line.progress) {
-                            output += line.finalText[i];
-                        } else if (line.finalText[i] === " ") {
-                            output += " ";
-                        } else {
-                            output += chars[Math.floor(Math.random() * chars.length)];
-                        }
-                    }
-
-                    line.element.textContent = output;
+                if (form && button && !button.disabled) {
+                    button.textContent = "Generating...";
+                    button.disabled = true;
+                    form.submit();
                 }
+            }
+        });
 
-                if (completed === lineElements.length) {
-                    clearInterval(interval);
-                    container.classList.add("finished");
-                }
-            }, 35);
+        const promptSource = document.getElementById("promptSource");
+        const promptOutput = document.getElementById("promptOutput");
+
+        if (promptSource && promptOutput) {
+            const finalText = promptSource.textContent || "";
+            animateLines(finalText, promptOutput);
         }
-    </script>
+    });
+
+    function animateLines(text, container) {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@@#$%^&*()_+-=[]{};:<>?/\\|";
+        const lines = text.split(/\r?\n/);
+
+        container.innerHTML = "";
+
+        const lineStates = lines.map(line => {
+            const div = document.createElement("div");
+            div.className = "prompt-line";
+            div.textContent = "";
+            container.appendChild(div);
+
+            return {
+                finalText: line,
+                element: div,
+                progress: 0,
+                done: false
+            };
+        });
+
+        let lastTime = 0;
+        const frameDelay = 45;
+        const scrambleWindow = 8;
+
+        function frame(timestamp) {
+            if (timestamp - lastTime < frameDelay) {
+                requestAnimationFrame(frame);
+                return;
+            }
+
+            lastTime = timestamp;
+            let completed = 0;
+
+            for (const line of lineStates) {
+                if (line.done) {
+                    completed++;
+                    continue;
+                }
+
+                line.progress += Math.max(1, Math.floor(Math.random() * 3));
+
+                if (line.progress >= line.finalText.length) {
+                    line.progress = line.finalText.length;
+                    line.done = true;
+                    line.element.textContent = line.finalText;
+                    completed++;
+                    continue;
+                }
+
+                const revealed = line.finalText.slice(0, line.progress);
+
+                let scrambled = "";
+                const scrambleEnd = Math.min(line.progress + scrambleWindow, line.finalText.length);
+
+                for (let i = line.progress; i < scrambleEnd; i++) {
+                    const c = line.finalText[i];
+
+                    if (c === " ") {
+                        scrambled += " ";
+                    } else {
+                        scrambled += chars[Math.floor(Math.random() * chars.length)];
+                    }
+                }
+
+                line.element.textContent = revealed + scrambled;
+            }
+
+            if (completed < lineStates.length) {
+                requestAnimationFrame(frame);
+            } else {
+                container.classList.add("finished");
+            }
+        }
+
+        requestAnimationFrame(frame);
+    }
+</script>
 
 </body>
 </html>
