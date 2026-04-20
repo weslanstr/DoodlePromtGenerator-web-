@@ -57,16 +57,31 @@ body {
 .prompt-stage {
     flex: 1;
     width: 100%;
+    min-height: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    min-height: 0;
 }
 
 .prompt-scale-box {
     transform-origin: center center;
     display: inline-block;
+    position: relative;
+}
+
+.prompt-measure {
+    position: absolute;
+    inset: 0 auto auto 0;
+    visibility: hidden;
+    pointer-events: none;
+    margin: 0;
+    white-space: pre;
+    color: transparent;
+    background: transparent;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.1;
 }
 
 .prompt-source {
@@ -91,6 +106,7 @@ body {
     white-space: pre;
 }
 
+
 .generate-button {
     background: white;
     color: black;
@@ -100,17 +116,16 @@ body {
     cursor: pointer;
     border-radius: 999px;
     transition: transform 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
-    flex-shrink: 0;
 }
 
-.generate-button:hover {
-    opacity: 0.95;
-    transform: translateY(-1px);
-}
+    .generate-button:hover {
+        opacity: 0.95;
+        transform: translateY(-1px);
+    }
 
-.generate-button:active {
-    transform: scale(0.96);
-}
+    .generate-button:active {
+        transform: scale(0.96);
+    }
 
 @media (max-width: 700px) {
     .app-shell {

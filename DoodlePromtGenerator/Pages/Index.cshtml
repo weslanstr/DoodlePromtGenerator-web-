@@ -29,6 +29,7 @@
         {
             <div class="prompt-stage" id="promptStage">
                 <div class="prompt-scale-box" id="promptScaleBox">
+                    <pre id="promptMeasure" class="prompt-measure">@Model.Output</pre>
                     <pre id="promptSource" class="prompt-source">@Model.Output</pre>
                     <div id="promptOutput" class="prompt-output"></div>
                 </div>
@@ -77,9 +78,8 @@
 
                 if (promptSource && promptOutput) {
                     const finalText = promptSource.textContent || "";
-                    animateLines(finalText, promptOutput, () => {
-                        fitPromptToViewport();
-                    });
+                    fitPromptToViewport();
+                    animateLines(finalText, promptOutput);
                 }
 
                 window.addEventListener("resize", fitPromptToViewport);
@@ -89,7 +89,7 @@
                 setTimeout(fitPromptToViewport, 150);
             });
 
-            function animateLines(text, container, onComplete) {
+            function animateLines(text, container) {
                 const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@@#$%^&*()_+-=[]{};:<>?/\\\\|√∆∑πµΩ€£¥¢₹₿₩₪₫АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯΔλΩΨΦΘΣ";
                 const lines = text.split(/\r?\n/);
 
@@ -157,17 +157,10 @@
                         line.element.textContent = revealed + scrambled;
                     }
 
-                    fitPromptToViewport();
-
                     if (completed < lineStates.length) {
                         requestAnimationFrame(frame);
                     } else {
                         container.classList.add("finished");
-                        fitPromptToViewport();
-
-                        if (onComplete) {
-                            onComplete();
-                        }
                     }
                 }
 
@@ -177,22 +170,26 @@
             function fitPromptToViewport() {
                 const stage = document.getElementById("promptStage");
                 const scaleBox = document.getElementById("promptScaleBox");
+                const measure = document.getElementById("promptMeasure");
+                const controls = document.querySelector(".controls-row");
 
-                if (!stage || !scaleBox) return;
+                if (!stage || !scaleBox || !measure) return;
 
                 scaleBox.style.transform = "scale(1)";
 
                 const stageRect = stage.getBoundingClientRect();
-                const boxRect = scaleBox.getBoundingClientRect();
+                const measureRect = measure.getBoundingClientRect();
 
-                if (boxRect.width === 0 || boxRect.height === 0) return;
+                if (measureRect.width === 0 || measureRect.height === 0) return;
 
                 const padding = 12;
+                const controlsHeight = controls ? controls.getBoundingClientRect().height : 0;
+
                 const availableWidth = Math.max(0, stageRect.width - padding * 2);
                 const availableHeight = Math.max(0, stageRect.height - padding * 2);
 
-                const scaleX = availableWidth / boxRect.width;
-                const scaleY = availableHeight / boxRect.height;
+                const scaleX = availableWidth / measureRect.width;
+                const scaleY = availableHeight / measureRect.height;
                 const scale = Math.min(scaleX, scaleY, 1);
 
                 scaleBox.style.transform = `scale(${scale})`;
