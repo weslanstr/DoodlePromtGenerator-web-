@@ -4,6 +4,7 @@ html, body {
     background: black;
     color: white;
     font-family: Arial, sans-serif;
+    overflow: hidden;
 }
 
 body {
@@ -13,16 +14,18 @@ body {
 
 .app-shell {
     min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 24px;
-    padding: 24px;
+    gap: 16px;
+    padding: 16px;
     box-sizing: border-box;
     text-align: center;
     background: black;
     color: white;
+    overflow: hidden;
 }
 
 .intro-block {
@@ -31,10 +34,12 @@ body {
     align-items: center;
     gap: 20px;
     max-width: 700px;
+    padding: 0 12px;
+    box-sizing: border-box;
 }
 
 .logo-image {
-    max-width: 220px;
+    max-width: min(220px, 60vw);
     width: 100%;
     height: auto;
     display: block;
@@ -42,91 +47,26 @@ body {
 
 .intro-text {
     color: white;
-    font-size: 1rem;
+    font-size: clamp(0.95rem, 2.5vw, 1rem);
     line-height: 1.6;
     text-align: center;
     margin: 0;
     max-width: 600px;
 }
 
-.prompt-output {
-    color: white;
-    background: black;
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 14px;
-    line-height: 1.1;
-    white-space: pre-wrap;
-    margin: 0;
-}
-
-.generate-button {
-    background: white;
-    color: black;
-    border: none;
-    padding: 16px 32px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    border-radius: 999px;
-    transition: transform 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
-}
-
-    .generate-button:hover {
-        opacity: 0.95;
-        transform: translateY(-1px);
-    }
-
-    .generate-button:active {
-        transform: scale(0.5);
-    }
-
-.prompt-wrapper {
+.prompt-stage {
+    flex: 1;
+    width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 220px;
+    overflow: hidden;
+    min-height: 0;
 }
 
-.prompt-source {
-    display: none;
-}
-
-.prompt-output {
-    color: #d8ffd8;
-    background: black;
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 14px;
-    line-height: 1.1;
-    white-space: pre-wrap;
-    margin: 0;
-    text-shadow: 0 0 4px rgba(180, 255, 180, 0.25), 0 0 10px rgba(120, 255, 120, 0.15);
-}
-
-    .prompt-output::after {
-        content: "_";
-        display: inline-block;
-        margin-left: 2px;
-        animation: blinkCursor 0.8s steps(1) infinite;
-    }
-
-    .prompt-output.finished::after {
-        animation: blinkCursor 0.8s steps(1) infinite;
-    }
-
-@keyframes blinkCursor {
-    0%, 49% {
-        opacity: 1;
-    }
-
-    50%, 100% {
-        opacity: 0;
-    }
-}
-
-.prompt-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 220px;
+.prompt-scale-box {
+    transform-origin: center center;
+    display: inline-block;
 }
 
 .prompt-source {
@@ -144,20 +84,46 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    white-space: pre;
 }
 
 .prompt-line {
     white-space: pre;
 }
 
-.prompt-output::after {
-    content: "_";
-    display: inline-block;
-    margin-top: 6px;
-    animation: blinkCursor 0.8s steps(1) infinite;
+.generate-button {
+    background: white;
+    color: black;
+    border: none;
+    padding: 14px 24px;
+    font-size: clamp(1rem, 3vw, 1.1rem);
+    cursor: pointer;
+    border-radius: 999px;
+    transition: transform 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+    flex-shrink: 0;
 }
 
-@keyframes blinkCursor {
-    0%, 49% { opacity: 1; }
-    50%, 100% { opacity: 0; }
+.generate-button:hover {
+    opacity: 0.95;
+    transform: translateY(-1px);
+}
+
+.generate-button:active {
+    transform: scale(0.96);
+}
+
+@media (max-width: 700px) {
+    .app-shell {
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .prompt-output {
+        font-size: 12px;
+        line-height: 1.05;
+    }
+
+    .generate-button {
+        padding: 12px 20px;
+    }
 }

@@ -31,7 +31,7 @@ namespace DoodlePromptGenerator.Pages
             if (PromptCount == 0)
                 return "Gimmi a art idea!";
 
-            return $"Gimmi a {(PromptCount + 1).ToOrdinalWords()} art idea!";
+            return $"Gimmi the {(PromptCount + 1).ToOrdinalWords()} art idea!";
         }
 
         private string ToOrdinalWords(int number)

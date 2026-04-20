@@ -21,16 +21,17 @@
                 <img src="~/images/logo.png" alt="Art Prompt Generator Logo" class="logo-image" />
                 <p class="intro-text">
                     No art ideas? No problem.<br />
-                    Just generate and draw.<br />
-                    Non-Ai, Non-gmo, grassfed, free-range, voting rights.
+                    Just generate and draw.
                 </p>
             </div>
         }
         else
         {
-            <div class="prompt-wrapper">
-                <pre id="promptSource" class="prompt-source">@Model.Output</pre>
-                <div id="promptOutput" class="prompt-output"></div>
+            <div class="prompt-stage" id="promptStage">
+                <div class="prompt-scale-box" id="promptScaleBox">
+                    <pre id="promptSource" class="prompt-source">@Model.Output</pre>
+                    <div id="promptOutput" class="prompt-output"></div>
+                </div>
             </div>
         }
 
@@ -43,125 +44,160 @@
     </div>
 
     <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const form = document.getElementById("generateForm");
-        const button = document.getElementById("generateButton");
+            document.addEventListener("DOMContentLoaded", () => {
+                const form = document.getElementById("generateForm");
+                const button = document.getElementById("generateButton");
+                const promptSource = document.getElementById("promptSource");
+                const promptOutput = document.getElementById("promptOutput");
 
-        if (form && button) {
-                form.addEventListener("submit", function () {
-                    button.textContent = "One second...";
-                    button.disabled = true;
+                let isSubmitting = false;
+
+                if (form && button) {
+                    form.addEventListener("submit", function () {
+                        if (isSubmitting) return;
+
+                        isSubmitting = true;
+                        button.textContent = "One second...";
+                        button.disabled = true;
+                    });
+                }
+
+                document.addEventListener("keydown", function (event) {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+
+                        if (form && button && !button.disabled && !isSubmitting) {
+                            isSubmitting = true;
+                            button.textContent = "Generating...";
+                            button.disabled = true;
+                            form.requestSubmit(button);
+                        }
+                    }
                 });
-            }
-        document.addEventListener("keydown", function (event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
 
-                if (form && button && !button.disabled) {
-                    form.requestSubmit(button);
-                }
-            }
-        });
-
-        document.addEventListener("keydown", function (event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-
-                if (form && button && !button.disabled) {
-                    button.textContent = "Generating...";
-                    button.disabled = true;
-                    form.submit();
-                }
-            }
-        });
-
-        const promptSource = document.getElementById("promptSource");
-        const promptOutput = document.getElementById("promptOutput");
-
-        if (promptSource && promptOutput) {
-            const finalText = promptSource.textContent || "";
-            animateLines(finalText, promptOutput);
-        }
-    });
-
-    function animateLines(text, container) {
-                const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@@#$%^&*()_+-=[]{};:<>?/\\|√∆∑πµΩ€£¥¢₹₿₩₪₫АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯΔλΩΨΦΘΣ";
-        const lines = text.split(/\r?\n/);
-
-        container.innerHTML = "";
-
-        const lineStates = lines.map(line => {
-            const div = document.createElement("div");
-            div.className = "prompt-line";
-            div.textContent = "";
-            container.appendChild(div);
-
-            return {
-                finalText: line,
-                element: div,
-                progress: 0,
-                done: false
-            };
-        });
-
-        let lastTime = 0;
-        const frameDelay = 45;
-        const scrambleWindow = 8;
-
-        function frame(timestamp) {
-            if (timestamp - lastTime < frameDelay) {
-                requestAnimationFrame(frame);
-                return;
-            }
-
-            lastTime = timestamp;
-            let completed = 0;
-
-            for (const line of lineStates) {
-                if (line.done) {
-                    completed++;
-                    continue;
+                if (promptSource && promptOutput) {
+                    const finalText = promptSource.textContent || "";
+                    animateLines(finalText, promptOutput, () => {
+                        fitPromptToViewport();
+                    });
                 }
 
-                line.progress += Math.max(1, Math.floor(Math.random() * 3));
+                window.addEventListener("resize", fitPromptToViewport);
+                window.addEventListener("orientationchange", fitPromptToViewport);
 
-                if (line.progress >= line.finalText.length) {
-                    line.progress = line.finalText.length;
-                    line.done = true;
-                    line.element.textContent = line.finalText;
-                    completed++;
-                    continue;
-                }
+                setTimeout(fitPromptToViewport, 50);
+                setTimeout(fitPromptToViewport, 150);
+            });
 
-                const revealed = line.finalText.slice(0, line.progress);
+            function animateLines(text, container, onComplete) {
+                const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@@#$%^&*()_+-=[]{};:<>?/\\\\|√∆∑πµΩ€£¥¢₹₿₩₪₫АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯΔλΩΨΦΘΣ";
+                const lines = text.split(/\r?\n/);
 
-                let scrambled = "";
-                const scrambleEnd = Math.min(line.progress + scrambleWindow, line.finalText.length);
+                container.innerHTML = "";
+                container.classList.remove("finished");
 
-                for (let i = line.progress; i < scrambleEnd; i++) {
-                    const c = line.finalText[i];
+                const lineStates = lines.map(line => {
+                    const div = document.createElement("div");
+                    div.className = "prompt-line";
+                    div.textContent = "";
+                    container.appendChild(div);
 
-                    if (c === " ") {
-                        scrambled += " ";
+                    return {
+                        finalText: line,
+                        element: div,
+                        progress: 0,
+                        done: false
+                    };
+                });
+
+                let lastTime = 0;
+                const frameDelay = 45;
+                const scrambleWindow = 8;
+
+                function frame(timestamp) {
+                    if (timestamp - lastTime < frameDelay) {
+                        requestAnimationFrame(frame);
+                        return;
+                    }
+
+                    lastTime = timestamp;
+                    let completed = 0;
+
+                    for (const line of lineStates) {
+                        if (line.done) {
+                            completed++;
+                            continue;
+                        }
+
+                        line.progress += Math.max(1, Math.floor(Math.random() * 3));
+
+                        if (line.progress >= line.finalText.length) {
+                            line.progress = line.finalText.length;
+                            line.done = true;
+                            line.element.textContent = line.finalText;
+                            completed++;
+                            continue;
+                        }
+
+                        const revealed = line.finalText.slice(0, line.progress);
+
+                        let scrambled = "";
+                        const scrambleEnd = Math.min(line.progress + scrambleWindow, line.finalText.length);
+
+                        for (let i = line.progress; i < scrambleEnd; i++) {
+                            const c = line.finalText[i];
+
+                            if (c === " ") {
+                                scrambled += " ";
+                            } else {
+                                scrambled += chars[Math.floor(Math.random() * chars.length)];
+                            }
+                        }
+
+                        line.element.textContent = revealed + scrambled;
+                    }
+
+                    fitPromptToViewport();
+
+                    if (completed < lineStates.length) {
+                        requestAnimationFrame(frame);
                     } else {
-                        scrambled += chars[Math.floor(Math.random() * chars.length)];
+                        container.classList.add("finished");
+                        fitPromptToViewport();
+
+                        if (onComplete) {
+                            onComplete();
+                        }
                     }
                 }
 
-                line.element.textContent = revealed + scrambled;
-            }
-
-            if (completed < lineStates.length) {
                 requestAnimationFrame(frame);
-            } else {
-                container.classList.add("finished");
             }
-        }
 
-        requestAnimationFrame(frame);
-    }
-</script>
+            function fitPromptToViewport() {
+                const stage = document.getElementById("promptStage");
+                const scaleBox = document.getElementById("promptScaleBox");
 
+                if (!stage || !scaleBox) return;
+
+                scaleBox.style.transform = "scale(1)";
+
+                const stageRect = stage.getBoundingClientRect();
+                const boxRect = scaleBox.getBoundingClientRect();
+
+                if (boxRect.width === 0 || boxRect.height === 0) return;
+
+                const padding = 12;
+                const availableWidth = Math.max(0, stageRect.width - padding * 2);
+                const availableHeight = Math.max(0, stageRect.height - padding * 2);
+
+                const scaleX = availableWidth / boxRect.width;
+                const scaleY = availableHeight / boxRect.height;
+                const scale = Math.min(scaleX, scaleY, 1);
+
+                scaleBox.style.transform = `scale(${scale})`;
+            }
+    </script>
 </body>
 </html>
 
