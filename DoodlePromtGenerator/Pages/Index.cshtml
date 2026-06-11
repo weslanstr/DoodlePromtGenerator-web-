@@ -160,6 +160,7 @@
                     elements.button.disabled = false;
                     elements.button.textContent = nextButtonText || "Gimmi another art idea!";
                     elements.terminalStatus.classList.remove("active");
+                    updateCanvasDimensions(elements.asciiWidth, elements.asciiHeight);
 
                     for (const id of ["PromptCount", "AsciiWidth", "AsciiHeight", "ChallengeLevel"]) {
                         const nextValue = page.getElementById(id)?.value;
@@ -197,7 +198,7 @@
                 if (!widthInput || !heightInput) return;
 
                 const shell = document.querySelector(".app-shell");
-                const button = document.getElementById("generateButton");
+                const controls = document.querySelector(".controls-row");
                 const shellStyles = shell ? getComputedStyle(shell) : null;
                 const horizontalPadding = shellStyles
                     ? parseFloat(shellStyles.paddingLeft) + parseFloat(shellStyles.paddingRight)
@@ -205,10 +206,10 @@
                 const verticalPadding = shellStyles
                     ? parseFloat(shellStyles.paddingTop) + parseFloat(shellStyles.paddingBottom)
                     : 32;
-                const buttonHeight = button ? button.getBoundingClientRect().height : 52;
+                const controlsHeight = controls ? controls.getBoundingClientRect().height : 110;
                 const metrics = measureMonospaceMetrics();
                 const availableWidth = Math.max(0, window.innerWidth - horizontalPadding);
-                const availableHeight = Math.max(0, window.innerHeight - verticalPadding - buttonHeight - 32);
+                const availableHeight = Math.max(0, window.innerHeight - verticalPadding - controlsHeight - 24);
 
                 widthInput.value = Math.max(36, Math.min(140, Math.floor(availableWidth / metrics.characterWidth)));
                 heightInput.value = Math.max(18, Math.min(60, Math.floor(availableHeight / metrics.lineHeight)));
@@ -230,7 +231,7 @@
             }
 
             function animateLines(text, container) {
-                const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@@#$%^&*()_+-=[]{};:<>?/\\\\|√∆∑πµΩ€£¥¢₹₿₩₪₫АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯΔλΩΨΦΘΣ";
+                const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@@#$%^&*()_+-=[]{};:<>?/\\\\|";
                 const lines = text.split(/\r?\n/);
                 const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
                 const soundProfile = createAsciiSoundProfile(text);
@@ -243,6 +244,7 @@
                     const separatedLine = separateEmojiLine(line, segmenter);
                     const div = document.createElement("div");
                     div.className = "prompt-line";
+                    div.style.width = `${separatedLine.asciiLine.length}ch`;
                     div.textContent = "";
                     container.appendChild(div);
 
