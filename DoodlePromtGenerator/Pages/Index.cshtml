@@ -424,11 +424,11 @@
                 const risingSemitones = Math.round(progress * 12);
                 const semitones = profile.scale[noteIndex] + octave * 12 + risingSemitones;
                 const frequency = profile.root * Math.pow(2, semitones / 12);
-                const volume = Math.min(0.026, 0.007 + density * 0.019);
+                const volume = Math.min(0.045, 0.012 + density * 0.033);
                 const pan = Math.max(-0.75, Math.min(0.75, progress * 1.5 - 0.75));
 
                 updateAsciiSound(sustainedSound, progress, pan);
-                playTone(frequency, 0.07, volume * 0.65, profile.voice, pan);
+                playTone(frequency, 0.07, volume * 0.75, profile.voice, pan);
             }
 
             function startAsciiSound(profile) {
@@ -451,7 +451,7 @@
                     }
 
                     oscillator.start();
-                    gain.gain.exponentialRampToValueAtTime(0.013, context.currentTime + 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.023, context.currentTime + 0.08);
                     return {
                         context,
                         oscillator,
@@ -471,7 +471,7 @@
                 const sweepFrequency = sound.startFrequency *
                     Math.pow(sound.endFrequency / sound.startFrequency, progress);
                 sound.oscillator.frequency.setTargetAtTime(sweepFrequency, now, 0.025);
-                sound.gain.gain.setTargetAtTime(0.014, now, 0.05);
+                sound.gain.gain.setTargetAtTime(0.024, now, 0.05);
                 if (sound.panner) sound.panner.pan.setTargetAtTime(pan, now, 0.05);
             }
 
