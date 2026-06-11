@@ -437,7 +437,7 @@ namespace DoodlePromptGenerator
             return BuildEmojiLine(matches.ToArray());
         }
 
-        public string GeneratePrompt(int challenge = 5)
+        public string GeneratePrompt(int challenge = 0)
         {
             challenge = Math.Clamp(challenge, 0, 10);
 
@@ -452,7 +452,7 @@ namespace DoodlePromptGenerator
         {
             return challenge switch
             {
-                0 => BuildSimpleSubjectPrompt(false),
+                0 => BuildLevelZeroPrompt(),
                 1 => BuildSimpleSubjectPrompt(true),
                 2 => BuildModifierPrompt(),
                 3 => BuildScenePrompt(false),
@@ -479,6 +479,29 @@ namespace DoodlePromptGenerator
             return withModifier
                 ? $"A {GetRandomItem(AppearanceAdjectives)} {subject}."
                 : $"A {subject}.";
+        }
+
+        private string BuildLevelZeroPrompt()
+        {
+            string subject = random.Next(5) switch
+            {
+                0 => GetRandomEmojiPair(characterNouns).text,
+                1 => GetRandomEmojiPair(creatureNouns).text,
+                2 => GetRandomObjectNoun(),
+                3 => GetRandomItem(Nouns),
+                _ => GetRandomEmojiPair(countryNames).text
+            };
+
+            if (subject is "United States" or "United Kingdom")
+                return $"The {subject}.";
+
+            if (countryNames.ContainsKey(subject) || BareSimpleSubjects.Contains(subject))
+                return $"{subject}.";
+
+            if (random.Next(4) == 0)
+                return $"The {subject}.";
+
+            return $"{GetIndefiniteArticle(subject)} {subject}.";
         }
 
         private string BuildModifierPrompt()
@@ -609,6 +632,20 @@ namespace DoodlePromptGenerator
             sentence = Regex.Replace(sentence, @"\ba ([aeiouAEIOU])", "an $1");
             return sentence;
         }
+
+        private static string GetIndefiniteArticle(string subject)
+        {
+            return subject.Equals("AK-47", StringComparison.OrdinalIgnoreCase) ||
+                   Regex.IsMatch(subject, @"^[aeiouAEIOU]")
+                ? "An"
+                : "A";
+        }
+
+        private static readonly HashSet<string> BareSimpleSubjects = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "headphones", "sunglasses", "dice", "playing cards", "grapes", "fries", "dumplings",
+            "ramen", "sushi", "coffee", "tea", "ice cream", "chocolate", "popcorn", "fried chicken"
+        };
 
         private static readonly string[] AppearanceAdjectives =
         {

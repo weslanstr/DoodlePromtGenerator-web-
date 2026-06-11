@@ -24,7 +24,7 @@ namespace DoodlePromptGenerator.Pages
         public int AsciiHeight { get; set; } = 42;
 
         [BindProperty(SupportsGet = true)]
-        public int ChallengeLevel { get; set; } = 5;
+        public int ChallengeLevel { get; set; } = 0;
 
         [BindProperty(SupportsGet = true)]
         public string? PromptId { get; set; }
