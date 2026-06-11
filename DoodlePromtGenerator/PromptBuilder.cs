@@ -13,7 +13,6 @@ namespace DoodlePromptGenerator
         private Dictionary<string, string> foods;
         private Dictionary<string, string> countries;
         private Dictionary<string, string> expressions;
-        private Dictionary<string, string> foodsEmojiMap;
         private Dictionary<string, string> genders;
         private Dictionary<string, string> characters;
         private Dictionary<string, string> animals;
@@ -373,7 +372,10 @@ namespace DoodlePromptGenerator
 
         public string GeneratePrompt()
         {
-            int sentenceType = random.Next(8);
+            if (random.Next(100) == 0)
+                return $"✦ RARE PROMPT ✦{Environment.NewLine}{GetRandomItem(RarePrompts)}";
+
+            int sentenceType = random.Next(10);
 
             switch (sentenceType)
             {
@@ -485,25 +487,39 @@ namespace DoodlePromptGenerator
                         var character2 = GetRandomEmojiPair(characters);
 
                         string sentence = $"A {character1.text} {action.text} for a {character2.text}.";
-                        string emojis = $"{character1.emoji}{action.emoji}{character2.emoji}";
+                        string emojis = BuildEmojiLine(character1.emoji, action.emoji, character2.emoji);
 
                         return $"{emojis}{Environment.NewLine}{sentence}";
                     }
                 case 9:
                     {
                         var character = GetRandomEmojiPair(characters);
-                        var item = GetRandomEmojiPair(actions);
-                        var vibe = GetRandomEmojiPair(characters);
+                        var item = GetRandomEmojiPair(holdingItems);
+                        var vibe = GetRandomEmojiPair(vibes);
 
                         string sentence = $"A {vibe.text} {character.text} holding a {item.text}.";
-                        string emojis = $"{vibe.emoji}{character.emoji}{item.emoji}";
+                        string emojis = BuildEmojiLine(vibe.emoji, character.emoji, item.emoji);
 
                         return $"{emojis}{Environment.NewLine}{sentence}";
                     }
 
                 default:
-                    return $"BROKEM!.";
+                    throw new InvalidOperationException($"Unsupported prompt template: {sentenceType}.");
             }
         }
+
+        private static readonly string[] RarePrompts =
+        {
+            "Draw the memory of a city.",
+            "Draw your first dream.",
+            "Draw a place that only exists when nobody is looking.",
+            "Draw the last light left in the universe.",
+            "Draw a machine that misses its creator.",
+            "Draw the sound of a forgotten name.",
+            "Draw tomorrow as remembered by someone from the past.",
+            "Draw a doorway that refuses to open.",
+            "Draw the safest place in a dangerous world.",
+            "Draw something beautiful that should not exist."
+        };
     }
 }

@@ -15,51 +15,89 @@
 </head>
 <body>
     <div class="app-shell">
-        @if (string.IsNullOrWhiteSpace(Model.Output))
-        {
-            <div class="intro-block">
-                <img src="~/images/logo.png" alt="Art Prompt Generator Logo" class="logo-image" />
-                <p class="intro-text">
-                    No art ideas? No problem.<br />
-                    Just generate and draw.
-                </p>
-            </div>
-        }
-        else
-        {
-            <div class="prompt-stage" id="promptStage">
-                <div class="prompt-scale-box" id="promptScaleBox">
-                    <pre id="promptMeasure" class="prompt-measure">@Model.Output</pre>
-                    <pre id="promptSource" class="prompt-source">@Model.Output</pre>
-                    <div id="promptOutput" class="prompt-output"></div>
-                </div>
-            </div>
-        }
+        <div class="intro-block @(string.IsNullOrWhiteSpace(Model.Output) ? "" : "is-hidden")" id="introBlock">
+            <img src="~/images/logo.png" alt="Art Prompt Generator Logo" class="logo-image" />
+            <p class="intro-text">
+                No art ideas? No problem.<br />
+                Just generate and draw.
+            </p>
+        </div>
 
-        <form method="post" id="generateForm">
-            <input type="hidden" id="PromptCount" name="PromptCount" value="@Model.PromptCount" />
-            <button type="submit" asp-page-handler="Generate" class="generate-button" id="generateButton">
-                @Model.GetButtonText()
-            </button>
-        </form>
+        <div class="prompt-stage @(string.IsNullOrWhiteSpace(Model.Output) ? "is-hidden" : "")" id="promptStage">
+            <div class="prompt-card">
+                <pre id="promptSource" class="prompt-source">@Model.Output</pre>
+                <pre id="promptTextSource" class="prompt-source">@Model.PromptText</pre>
+                <div id="promptOutput" class="prompt-output"></div>
+            </div>
+        </div>
+
+        <div class="controls-row">
+            <form method="post" asp-page-handler="Generate" id="generateForm">
+                <input type="hidden" id="PromptCount" name="PromptCount" value="@Model.PromptCount" />
+                <input type="hidden" id="AsciiWidth" name="AsciiWidth" value="@Model.AsciiWidth" />
+                <input type="hidden" id="AsciiHeight" name="AsciiHeight" value="@Model.AsciiHeight" />
+                <button type="submit" class="generate-button" id="generateButton">
+                    @Model.GetButtonText()
+                </button>
+            </form>
+
+            <button type="button" class="copy-button @(string.IsNullOrWhiteSpace(Model.PromptText) ? "is-hidden" : "")" id="copyButton" aria-label="Copy prompt">Copy prompt</button>
+        </div>
+
+        <div class="terminal-status" id="terminalStatus" aria-live="polite"></div>
     </div>
 
     <script>
+            let audioContext;
+
             document.addEventListener("DOMContentLoaded", () => {
                 const form = document.getElementById("generateForm");
                 const button = document.getElementById("generateButton");
                 const promptSource = document.getElementById("promptSource");
+                const promptTextSource = document.getElementById("promptTextSource");
                 const promptOutput = document.getElementById("promptOutput");
+                const copyButton = document.getElementById("copyButton");
+                const terminalStatus = document.getElementById("terminalStatus");
+                const introBlock = document.getElementById("introBlock");
+                const promptStage = document.getElementById("promptStage");
+                const asciiWidth = document.getElementById("AsciiWidth");
+                const asciiHeight = document.getElementById("AsciiHeight");
 
                 let isSubmitting = false;
 
                 if (form && button) {
-                    form.addEventListener("submit", function () {
+                    form.addEventListener("submit", async function (event) {
+                        event.preventDefault();
                         if (isSubmitting) return;
 
+                        updateCanvasDimensions(asciiWidth, asciiHeight);
                         isSubmitting = true;
-                        button.textContent = "One second...";
                         button.disabled = true;
+                        playButtonSound();
+                        await showTerminalSequence(terminalStatus);
+                        await generatePrompt(form, {
+                            button,
+                            copyButton,
+                            introBlock,
+                            promptStage,
+                            promptSource,
+                            promptTextSource,
+                            promptOutput,
+                            terminalStatus,
+                            asciiWidth,
+                            asciiHeight
+                        });
+                        isSubmitting = false;
+                    });
+                }
+
+                if (copyButton && promptTextSource) {
+                    copyButton.addEventListener("click", async function () {
+                        const text = promptTextSource.textContent || "";
+                        playButtonSound();
+                        const copied = await copyText(text);
+                        copyButton.textContent = copied ? "Copied!" : "Copy failed";
+                        setTimeout(() => copyButton.textContent = "Copy prompt", 1300);
                     });
                 }
 
@@ -68,9 +106,6 @@
                         event.preventDefault();
 
                         if (form && button && !button.disabled && !isSubmitting) {
-                            isSubmitting = true;
-                            button.textContent = "Generating...";
-                            button.disabled = true;
                             form.requestSubmit(button);
                         }
                     }
@@ -78,40 +113,125 @@
 
                 if (promptSource && promptOutput) {
                     const finalText = promptSource.textContent || "";
-                    fitPromptToViewport();
                     animateLines(finalText, promptOutput);
                 }
 
-                window.addEventListener("resize", fitPromptToViewport);
-                window.addEventListener("orientationchange", fitPromptToViewport);
-
-                setTimeout(fitPromptToViewport, 50);
-                setTimeout(fitPromptToViewport, 150);
+                updateCanvasDimensions(asciiWidth, asciiHeight);
+                window.addEventListener("resize", () => updateCanvasDimensions(asciiWidth, asciiHeight));
+                window.addEventListener("orientationchange", () => updateCanvasDimensions(asciiWidth, asciiHeight));
+                window.addEventListener("popstate", () => window.location.reload());
             });
+
+            async function generatePrompt(form, elements) {
+                try {
+                    const response = await fetch(form.action, {
+                        method: "POST",
+                        body: new FormData(form)
+                    });
+                    const html = await response.text();
+                    const page = new DOMParser().parseFromString(html, "text/html");
+                    const nextPrompt = page.getElementById("promptSource")?.textContent || "";
+                    const nextPromptText = page.getElementById("promptTextSource")?.textContent || "";
+                    const nextButtonText = page.getElementById("generateButton")?.textContent?.trim();
+
+                    elements.promptSource.textContent = nextPrompt;
+                    elements.promptTextSource.textContent = nextPromptText;
+                    elements.introBlock.classList.add("is-hidden");
+                    elements.promptStage.classList.remove("is-hidden");
+                    elements.copyButton.classList.remove("is-hidden");
+                    elements.button.disabled = false;
+                    elements.button.textContent = nextButtonText || "Gimmi another art idea!";
+                    elements.terminalStatus.classList.remove("active");
+
+                    for (const id of ["PromptCount", "AsciiWidth", "AsciiHeight"]) {
+                        const nextValue = page.getElementById(id)?.value;
+                        const currentInput = document.getElementById(id);
+                        if (nextValue && currentInput) currentInput.value = nextValue;
+                    }
+
+                    history.pushState({}, "", response.url);
+                    animateLines(nextPrompt, elements.promptOutput);
+                } catch {
+                    form.submit();
+                }
+            }
+
+            function updateCanvasDimensions(widthInput, heightInput) {
+                if (!widthInput || !heightInput) return;
+
+                const shell = document.querySelector(".app-shell");
+                const button = document.getElementById("generateButton");
+                const shellStyles = shell ? getComputedStyle(shell) : null;
+                const horizontalPadding = shellStyles
+                    ? parseFloat(shellStyles.paddingLeft) + parseFloat(shellStyles.paddingRight)
+                    : 48;
+                const verticalPadding = shellStyles
+                    ? parseFloat(shellStyles.paddingTop) + parseFloat(shellStyles.paddingBottom)
+                    : 32;
+                const buttonHeight = button ? button.getBoundingClientRect().height : 52;
+                const metrics = measureMonospaceMetrics();
+                const availableWidth = Math.max(0, window.innerWidth - horizontalPadding);
+                const availableHeight = Math.max(0, window.innerHeight - verticalPadding - buttonHeight - 32);
+
+                widthInput.value = Math.max(36, Math.min(140, Math.floor(availableWidth / metrics.characterWidth)));
+                heightInput.value = Math.max(18, Math.min(60, Math.floor(availableHeight / metrics.lineHeight)));
+            }
+
+            function measureMonospaceMetrics() {
+                const measure = document.createElement("span");
+                measure.className = "character-measure";
+                measure.textContent = "0000000000";
+                document.body.appendChild(measure);
+                const styles = getComputedStyle(measure);
+                const characterWidth = measure.getBoundingClientRect().width / 10;
+                const lineHeight = parseFloat(styles.lineHeight) || parseFloat(styles.fontSize) * 1.12;
+                measure.remove();
+                return {
+                    characterWidth: Math.max(characterWidth, 1),
+                    lineHeight: Math.max(lineHeight, 1)
+                };
+            }
 
             function animateLines(text, container) {
                 const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@@#$%^&*()_+-=[]{};:<>?/\\\\|√∆∑πµΩ€£¥¢₹₿₩₪₫АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯΔλΩΨΦΘΣ";
                 const lines = text.split(/\r?\n/);
+                const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+                const soundProfile = createAsciiSoundProfile(text);
+                const sustainedSound = startAsciiSound(soundProfile);
 
                 container.innerHTML = "";
                 container.classList.remove("finished");
 
                 const lineStates = lines.map(line => {
+                    const separatedLine = separateEmojiLine(line, segmenter);
                     const div = document.createElement("div");
                     div.className = "prompt-line";
                     div.textContent = "";
                     container.appendChild(div);
 
+                    let emojiOverlay = null;
+
+                    if (separatedLine.emojis) {
+                        emojiOverlay = document.createElement("span");
+                        emojiOverlay.className = "emoji-overlay";
+                        emojiOverlay.textContent = separatedLine.emojis;
+                        emojiOverlay.hidden = true;
+                        div.appendChild(emojiOverlay);
+                    }
+
                     return {
-                        finalText: line,
+                        finalText: separatedLine.asciiLine,
                         element: div,
+                        emojiOverlay,
                         progress: 0,
                         done: false
                     };
                 });
 
                 let lastTime = 0;
-                const frameDelay = 45;
+                let lastSoundTime = 0;
+                const frameDelay = 22;
+                const soundDelay = 65;
                 const scrambleWindow = 8;
 
                 function frame(timestamp) {
@@ -122,19 +242,36 @@
 
                     lastTime = timestamp;
                     let completed = 0;
+                    let revealedSlice = "";
+                    let rowEnergy = 0;
+                    let totalProgress = 0;
 
-                    for (const line of lineStates) {
+                    for (let rowIndex = 0; rowIndex < lineStates.length; rowIndex++) {
+                        const line = lineStates[rowIndex];
+
                         if (line.done) {
                             completed++;
+                            totalProgress += line.progress;
                             continue;
                         }
 
+                        const previousProgress = line.progress;
                         line.progress += Math.max(1, Math.floor(Math.random() * 3));
+                        line.progress = Math.min(line.progress, line.finalText.length);
+                        const newlyRevealed = line.finalText.slice(previousProgress, line.progress);
+                        revealedSlice += newlyRevealed;
+                        rowEnergy += asciiDensity(newlyRevealed) * (rowIndex + 1);
+                        totalProgress += line.progress;
 
                         if (line.progress >= line.finalText.length) {
-                            line.progress = line.finalText.length;
                             line.done = true;
                             line.element.textContent = line.finalText;
+
+                            if (line.emojiOverlay) {
+                                line.element.appendChild(line.emojiOverlay);
+                                line.emojiOverlay.hidden = false;
+                            }
+
                             completed++;
                             continue;
                         }
@@ -157,42 +294,246 @@
                         line.element.textContent = revealed + scrambled;
                     }
 
+                    if (timestamp - lastSoundTime >= soundDelay && revealedSlice.trim().length > 0) {
+                        const totalLength = lineStates.reduce((sum, line) => sum + line.finalText.length, 0);
+                        playAsciiSlice(
+                            revealedSlice,
+                            rowEnergy,
+                            totalLength > 0 ? totalProgress / totalLength : 0,
+                            soundProfile,
+                            sustainedSound);
+                        lastSoundTime = timestamp;
+                    }
+
                     if (completed < lineStates.length) {
                         requestAnimationFrame(frame);
                     } else {
                         container.classList.add("finished");
+                        stopAsciiSound(sustainedSound);
+                        playCompletionBeep();
                     }
                 }
 
                 requestAnimationFrame(frame);
             }
 
-            function fitPromptToViewport() {
-                const stage = document.getElementById("promptStage");
-                const scaleBox = document.getElementById("promptScaleBox");
-                const measure = document.getElementById("promptMeasure");
-                const controls = document.querySelector(".controls-row");
+            function separateEmojiLine(line, segmenter) {
+                const graphemes = Array.from(segmenter.segment(line), part => part.segment);
+                const emojiGraphemes = graphemes.filter(isEmojiGrapheme);
 
-                if (!stage || !scaleBox || !measure) return;
+                if (emojiGraphemes.length === 0)
+                    return { asciiLine: line, emojis: "" };
 
-                scaleBox.style.transform = "scale(1)";
+                return {
+                    asciiLine: graphemes.map(grapheme => isEmojiGrapheme(grapheme) ? " " : grapheme).join(""),
+                    emojis: emojiGraphemes.join("")
+                };
+            }
 
-                const stageRect = stage.getBoundingClientRect();
-                const measureRect = measure.getBoundingClientRect();
+            function isEmojiGrapheme(grapheme) {
+                return /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(grapheme);
+            }
 
-                if (measureRect.width === 0 || measureRect.height === 0) return;
+            function createAsciiSoundProfile(text) {
+                const scales = [
+                    [0, 2, 4, 7, 9],
+                    [0, 3, 5, 7, 10],
+                    [0, 2, 5, 7, 11],
+                    [0, 1, 5, 7, 8]
+                ];
+                const voices = ["square", "square", "triangle"];
+                const roots = [65.41, 73.42, 82.41, 98];
+                let hash = 2166136261;
 
-                const padding = 12;
-                const controlsHeight = controls ? controls.getBoundingClientRect().height : 0;
+                for (const character of text) {
+                    hash ^= character.codePointAt(0);
+                    hash = Math.imul(hash, 16777619);
+                }
 
-                const availableWidth = Math.max(0, stageRect.width - padding * 2);
-                const availableHeight = Math.max(0, stageRect.height - padding * 2);
+                hash >>>= 0;
 
-                const scaleX = availableWidth / measureRect.width;
-                const scaleY = availableHeight / measureRect.height;
-                const scale = Math.min(scaleX, scaleY, 1);
+                return {
+                    hash,
+                    scale: scales[hash % scales.length],
+                    voice: voices[(hash >>> 3) % voices.length],
+                    root: roots[(hash >>> 6) % roots.length]
+                };
+            }
 
-                scaleBox.style.transform = `scale(${scale})`;
+            function asciiDensity(text) {
+                const densityOrder = " .`':,-~_^=+|/\\<>[]{}()*ox%#@@";
+                let density = 0;
+
+                for (const character of text) {
+                    const index = densityOrder.indexOf(character);
+                    density += index >= 0 ? index / densityOrder.length : 0.45;
+                }
+
+                return density;
+            }
+
+            function playAsciiSlice(slice, rowEnergy, progress, profile, sustainedSound) {
+                const visible = Array.from(slice).filter(character => character !== " ");
+
+                if (visible.length === 0)
+                    return;
+
+                const symbolValue = visible.reduce((sum, character) => sum + character.codePointAt(0), 0);
+                const density = asciiDensity(slice) / Math.max(slice.length, 1);
+                const noteIndex = Math.abs(symbolValue + Math.floor(rowEnergy) + profile.hash) % profile.scale.length;
+                const octave = density > 0.55 ? 2 : density > 0.25 ? 1 : 0;
+                const risingSemitones = Math.round(progress * 12);
+                const semitones = profile.scale[noteIndex] + octave * 12 + risingSemitones;
+                const frequency = profile.root * Math.pow(2, semitones / 12);
+                const volume = Math.min(0.026, 0.007 + density * 0.019);
+                const pan = Math.max(-0.75, Math.min(0.75, progress * 1.5 - 0.75));
+
+                updateAsciiSound(sustainedSound, progress, pan);
+                playTone(frequency, 0.07, volume * 0.65, profile.voice, pan);
+            }
+
+            function startAsciiSound(profile) {
+                try {
+                    const context = getAudioContext();
+                    const oscillator = context.createOscillator();
+                    const gain = context.createGain();
+                    const panner = context.createStereoPanner ? context.createStereoPanner() : null;
+
+                    oscillator.type = profile.voice;
+                    oscillator.frequency.value = profile.root * 0.75;
+                    gain.gain.value = 0.0001;
+                    oscillator.connect(gain);
+
+                    if (panner) {
+                        gain.connect(panner);
+                        panner.connect(context.destination);
+                    } else {
+                        gain.connect(context.destination);
+                    }
+
+                    oscillator.start();
+                    gain.gain.exponentialRampToValueAtTime(0.013, context.currentTime + 0.08);
+                    return {
+                        context,
+                        oscillator,
+                        gain,
+                        panner,
+                        startFrequency: profile.root * 0.75,
+                        endFrequency: profile.root * 6
+                    };
+                } catch {
+                    return null;
+                }
+            }
+
+            function updateAsciiSound(sound, progress, pan) {
+                if (!sound) return;
+                const now = sound.context.currentTime;
+                const sweepFrequency = sound.startFrequency *
+                    Math.pow(sound.endFrequency / sound.startFrequency, progress);
+                sound.oscillator.frequency.setTargetAtTime(sweepFrequency, now, 0.025);
+                sound.gain.gain.setTargetAtTime(0.014, now, 0.05);
+                if (sound.panner) sound.panner.pan.setTargetAtTime(pan, now, 0.05);
+            }
+
+            function stopAsciiSound(sound) {
+                if (!sound) return;
+                const now = sound.context.currentTime;
+                sound.gain.gain.cancelScheduledValues(now);
+                sound.gain.gain.setTargetAtTime(0.0001, now, 0.08);
+                sound.oscillator.stop(now + 0.35);
+            }
+
+            async function showTerminalSequence(container) {
+                if (!container) return;
+
+                const messages = [
+                    "> generating idea...",
+                    "> scanning imagination...",
+                    "> found prompt..."
+                ];
+
+                container.innerHTML = "";
+                container.classList.add("active");
+
+                for (const message of messages) {
+                    const line = document.createElement("div");
+                    line.textContent = message;
+                    container.appendChild(line);
+                    await delay(150);
+                }
+
+                await delay(100);
+            }
+
+            function delay(milliseconds) {
+                return new Promise(resolve => setTimeout(resolve, milliseconds));
+            }
+
+            async function copyText(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch {
+                    const textarea = document.createElement("textarea");
+                    textarea.value = text;
+                    textarea.style.position = "fixed";
+                    textarea.style.opacity = "0";
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    const copied = document.execCommand("copy");
+                    textarea.remove();
+                    return copied;
+                }
+            }
+
+            function playButtonSound() {
+                playTone(260, 0.04, 0.025, "square");
+            }
+
+            function playGenerationSound() {
+                playTone(440, 0.08, 0.035, "sine");
+                setTimeout(() => playTone(660, 0.12, 0.025, "sine"), 70);
+            }
+
+            function playCompletionBeep() {
+                playTone(523.25, 0.08, 0.028, "square");
+                setTimeout(() => playTone(783.99, 0.14, 0.025, "square"), 85);
+            }
+
+            function playTone(frequency, duration, volume, type, pan = 0) {
+                try {
+                    const context = getAudioContext();
+                    const oscillator = context.createOscillator();
+                    const gain = context.createGain();
+
+                    oscillator.type = type;
+                    oscillator.frequency.value = frequency;
+                    gain.gain.setValueAtTime(volume, context.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + duration);
+                    oscillator.connect(gain);
+
+                    if (context.createStereoPanner) {
+                        const panner = context.createStereoPanner();
+                        panner.pan.value = pan;
+                        gain.connect(panner);
+                        panner.connect(context.destination);
+                    } else {
+                        gain.connect(context.destination);
+                    }
+
+                    oscillator.start();
+                    oscillator.stop(context.currentTime + duration);
+                } catch {
+                    // Audio is optional and may be blocked by browser settings.
+                }
+            }
+
+            function getAudioContext() {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioContext ??= new AudioContext();
+                audioContext.resume();
+                return audioContext;
             }
     </script>
 </body>

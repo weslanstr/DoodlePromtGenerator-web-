@@ -3,7 +3,7 @@ using System.Text;
 using System.Collections.Generic;
 
 /// <summary>
-/// Generates procedural ASCII patterns in the console.
+/// Generates procedural ASCII patterns.
 ///
 /// Entry points:
 ///   AsciiPatternGenerator.GenerateRandom()              – 50 % chance: defined pattern, 50 % chance: procedural automaton
@@ -21,16 +21,15 @@ public static class AsciiPatternGenerator
     /// • If <paramref name="patternName"/> is supplied and recognised, that
     ///   defined pattern is rendered directly.
     /// • Otherwise a coin is flipped:
-    ///     Heads (50 %) → one of the 7 defined patterns, each with equal probability (1/7)
+    ///     Heads (50 %) → one of the defined patterns, selected with equal probability
     ///     Tails (50 %) → a fully procedural cellular-automaton pattern
     /// </summary>
     /// <param name="patternName">
-    ///   Optional. One of: "wave", "diamond", "spiral", "maze",
-    ///   "checkerboard", "zigzag", "ripple". Pass null / omit to let the
-    ///   method decide randomly.
+    ///   Optional. Use a name returned by <see cref="AvailablePatterns"/>.
+    ///   Pass null or omit to let the method decide randomly.
     /// </param>
     /// <param name="lines">Height of the output in console rows (default 50).</param>
-    /// <param name="width">Width of the output in characters (default 80).</param>
+    /// <param name="width">Width of the output in characters (default 120).</param>
     /// <param name="seed">
     ///   Optional RNG seed. Same seed always produces the same output.
     /// </param>
@@ -52,8 +51,7 @@ public static class AsciiPatternGenerator
         if (rng.Next(2) == 0)
         {
             // ── Defined-pattern branch (50 % of all calls) ───────────────────
-            // Each of the 7 named patterns has equal probability (1/7) within
-            // this branch, so each is 1/14 of all calls overall.
+            // Each named pattern has equal probability within this branch.
             string[] names = AvailablePatterns();
             string chosen = names[rng.Next(names.Length)];
             return Render(Resolve(chosen), lines, width);
