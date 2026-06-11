@@ -6,12 +6,12 @@ namespace DoodlePromptGenerator
 
     public static class PromptFormatter
     {
-        public static FormattedPrompt BuildPromptWithAscii(PromptBuilder promptBuilder, int width, int height)
+        public static FormattedPrompt BuildPromptWithAscii(PromptBuilder promptBuilder, int width, int height, int challenge)
         {
             width = Math.Clamp(width, 36, 140);
             height = Math.Clamp(height, 18, 60);
 
-            string prompt = promptBuilder.GeneratePrompt();
+            string prompt = promptBuilder.GeneratePrompt(challenge);
             string ascii = AsciiPatternGenerator.GenerateRandom(lines: height, width: width);
             return new FormattedPrompt(CenterPromptInAscii(ascii, prompt), prompt);
         }

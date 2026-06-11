@@ -36,6 +36,13 @@
                 <input type="hidden" id="PromptCount" name="PromptCount" value="@Model.PromptCount" />
                 <input type="hidden" id="AsciiWidth" name="AsciiWidth" value="@Model.AsciiWidth" />
                 <input type="hidden" id="AsciiHeight" name="AsciiHeight" value="@Model.AsciiHeight" />
+                <label class="challenge-control" for="ChallengeLevel">
+                    <span class="challenge-heading">
+                        <span>Challenge</span>
+                        <strong><span id="challengeValue">@Model.ChallengeLevel</span> · <span id="challengeLabel">Solid Challenge</span></strong>
+                    </span>
+                    <input type="range" id="ChallengeLevel" name="ChallengeLevel" min="0" max="10" step="1" value="@Model.ChallengeLevel" />
+                </label>
                 <button type="submit" class="generate-button" id="generateButton">
                     @Model.GetButtonText()
                 </button>
@@ -62,6 +69,9 @@
                 const promptStage = document.getElementById("promptStage");
                 const asciiWidth = document.getElementById("AsciiWidth");
                 const asciiHeight = document.getElementById("AsciiHeight");
+                const challenge = document.getElementById("ChallengeLevel");
+                const challengeValue = document.getElementById("challengeValue");
+                const challengeLabel = document.getElementById("challengeLabel");
 
                 let isSubmitting = false;
 
@@ -88,6 +98,14 @@
                             asciiHeight
                         });
                         isSubmitting = false;
+                    });
+                }
+
+                if (challenge) {
+                    updateChallengeLabel(challenge, challengeValue, challengeLabel);
+                    challenge.addEventListener("input", () => {
+                        updateChallengeLabel(challenge, challengeValue, challengeLabel);
+                        playButtonSound();
                     });
                 }
 
@@ -143,7 +161,7 @@
                     elements.button.textContent = nextButtonText || "Gimmi another art idea!";
                     elements.terminalStatus.classList.remove("active");
 
-                    for (const id of ["PromptCount", "AsciiWidth", "AsciiHeight"]) {
+                    for (const id of ["PromptCount", "AsciiWidth", "AsciiHeight", "ChallengeLevel"]) {
                         const nextValue = page.getElementById(id)?.value;
                         const currentInput = document.getElementById(id);
                         if (nextValue && currentInput) currentInput.value = nextValue;
@@ -154,6 +172,25 @@
                 } catch {
                     form.submit();
                 }
+            }
+
+            function updateChallengeLabel(slider, valueElement, labelElement) {
+                const labels = [
+                    "Tiny Doodle",
+                    "Warm-Up",
+                    "Easy",
+                    "Simple Scene",
+                    "Fun Prompt",
+                    "Solid Challenge",
+                    "Detailed Scene",
+                    "Hard Mode",
+                    "Artist Workout",
+                    "Chaos",
+                    "Nightmare"
+                ];
+                const value = Number(slider.value);
+                if (valueElement) valueElement.textContent = value;
+                if (labelElement) labelElement.textContent = labels[value];
             }
 
             function updateCanvasDimensions(widthInput, heightInput) {

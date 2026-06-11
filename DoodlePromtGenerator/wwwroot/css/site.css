@@ -129,6 +129,41 @@ body {
     flex-wrap: wrap;
 }
 
+#generateForm {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.challenge-control {
+    width: clamp(220px, 30vw, 360px);
+    display: grid;
+    gap: 7px;
+    color: white;
+    font-family: Consolas, "Courier New", monospace;
+    text-align: left;
+}
+
+.challenge-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.78rem;
+}
+
+.challenge-heading strong {
+    font-weight: normal;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.challenge-control input[type="range"] {
+    width: 100%;
+    accent-color: white;
+    cursor: pointer;
+}
+
 .generate-button,
 .copy-button {
     background: white;
@@ -194,5 +229,10 @@ body {
     .generate-button,
     .copy-button {
         padding: 12px 20px;
+    }
+
+    #generateForm,
+    .challenge-control {
+        width: 100%;
     }
 }

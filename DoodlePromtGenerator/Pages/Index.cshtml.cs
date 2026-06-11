@@ -24,6 +24,9 @@ namespace DoodlePromptGenerator.Pages
         public int AsciiHeight { get; set; } = 42;
 
         [BindProperty(SupportsGet = true)]
+        public int ChallengeLevel { get; set; } = 5;
+
+        [BindProperty(SupportsGet = true)]
         public string? PromptId { get; set; }
 
         public void OnGet()
@@ -38,7 +41,8 @@ namespace DoodlePromptGenerator.Pages
         public IActionResult OnPostGenerate()
         {
             PromptCount++;
-            var prompt = PromptFormatter.BuildPromptWithAscii(_promptBuilder, AsciiWidth, AsciiHeight);
+            ChallengeLevel = Math.Clamp(ChallengeLevel, 0, 10);
+            var prompt = PromptFormatter.BuildPromptWithAscii(_promptBuilder, AsciiWidth, AsciiHeight, ChallengeLevel);
             Output = prompt.Display;
             PromptText = prompt.Text;
 
@@ -50,7 +54,8 @@ namespace DoodlePromptGenerator.Pages
                 PromptId,
                 PromptCount,
                 AsciiWidth,
-                AsciiHeight
+                AsciiHeight,
+                ChallengeLevel
             });
         }
 
